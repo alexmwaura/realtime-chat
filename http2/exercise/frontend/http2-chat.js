@@ -41,18 +41,33 @@ async function getNewMsgs() {
   } catch (e) {
     console.log("connection error", e);
   }
+  let done;
+  presence.innerText = "🍏";
 
-  presence.innerText = "🟢";
+  do {
+    let readerResponse;
+    try {
+      readerResponse = await reader.read();
+    } catch (e) {
+      console.error("reader fail", e);
+      presence.innerText = "🍎";
+      return;
+    }
 
-  let readerResponse;
-  try {
-    readerResponse = await reader.read();
+    done = readerResponse.done;
     const chunk = utf8Decoder.decode(readerResponse.value, { stream: true });
-    console.log(chunk);
-  } catch (e) {
-    console.error("reader fail", e);
-    presence.innerText = "🔴";
-  }
+
+    if (chunk) {
+      try {
+        const json = JSON.parse(chunk);
+        allChat = json.msg;
+        render();
+      } catch (e) {
+        console.error("parse error", e);
+      }
+    }
+  } while (!done);
+  presence.innerText = "🍎";
 }
 
 function render() {
